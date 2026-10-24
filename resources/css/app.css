@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@plugin "@duo-icons/tailwind"; /* Jika Anda masih pakai plugin ini */
+
+@theme {
+    --font-poppins: "Poppins", sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================
+   KONFIGURASI WARNA GLOBAL (LIGHT MODE)
+   ========================================= */
+:root {
+    --background: #ffffff;
+    --foreground: #111827;
+    
+    /* Warna Utama (Biru Sidebar) */
+    --primary: #2F80ED; 
+    --primary-foreground: #ffffff;
+    
+    --muted: #f3f4f6;
+    --muted-foreground: #9ca3af; 
+    --border: #e5e7eb; 
+    --card: #ffffff; 
+}
+
+/* =========================================
+   KONFIGURASI WARNA GLOBAL (DARK MODE)
+   ========================================= */
+.dark {
+    --background: #111827;
+    --foreground: #f9fafb;
+    
+    /* Warna Utama (Biru Sidebar versi terang) */
+    --primary: #3b82f6;
+    --primary-foreground: #ffffff;
+    
+    --muted: #1f2937;
+    --muted-foreground: #9ca3af;
+    --border: #374151;
+    --card: #1f2937;
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-border: var(--border);
+    --color-card: var(--card);
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+}
+
+[x-cloak] {
+    display: none !important;
+}
