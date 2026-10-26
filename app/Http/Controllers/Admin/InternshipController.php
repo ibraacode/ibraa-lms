@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\IndustryPlacement;
-use App\Models\InternshipLog;
+use App\Models\InternshipPlacement;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Helpers\AcademicYear;
 
 class InternshipController extends Controller
 {
@@ -32,14 +33,25 @@ class InternshipController extends Controller
 
     public function assign()
     {
-        $students = User::role('siswa')->with('studentProfile.classroom')->get();
+        $currentYear = AcademicYear::current();
+        
+        $students = User::role('siswa')
+            ->whereHas('studentProfile', function($q) use ($currentYear) {
+                $q->where('status', 'aktif')
+                  ->whereHas('classroom', function($q2) use ($currentYear) {
+                      $q2->where('academic_year', $currentYear);
+                  });
+            })
+            ->with('studentProfile.classroom')
+            ->get();
+
         $placements = IndustryPlacement::all();
         $teachers = User::role('guru')->get();
         
         return view('admin.internship.assign', compact('students', 'placements', 'teachers'));
     }
 
-      public function storeAssign(Request $request)
+    public function storeAssign(Request $request)
     {
         $request->validate([
             'student_id' => 'required|exists:users,id',
@@ -49,7 +61,7 @@ class InternshipController extends Controller
             'end_date' => 'nullable|date',
         ]);
 
-        \App\Models\InternshipPlacement::updateOrCreate(
+        InternshipPlacement::updateOrCreate(
             ['student_id' => $request->student_id],
             [
                 'industry_placement_id' => $request->industry_placement_id,

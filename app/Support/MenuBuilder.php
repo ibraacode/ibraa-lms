@@ -30,22 +30,35 @@ class MenuBuilder
 
     private static function filterMenu(array $menu, $user): ?array
     {
-        // 1. Cek permission
+        // ================= HEADER / KATEGORI =================
+        // Jika menu tidak punya 'route' (null), maka ini adalah Judul Kategori
+        if (array_key_exists('route', $menu) && $menu['route'] === null) {
+            // Cek apakah user punya permission untuk kategori ini
+            if (! empty($menu['permission']) && ! $user->can($menu['permission'])) {
+                return null; // Sembunyikan kategori jika tidak punya akses
+            }
+            return [
+                'label' => $menu['label'],
+                'is_header' => true,
+            ];
+        }
+
+        // ================= PERMISSION =================
         if (! empty($menu['permission']) && ! $user->can($menu['permission'])) {
             return null;
         }
 
-        // 2. Cek role
+        // ================= ROLE =================
         if (! empty($menu['role']) && ! $user->hasAnyRole((array) $menu['role'])) {
             return null;
         }
 
-        // 3. CEK FEATURE TOGGLE (Saklar Fitur)
+        // ================= FEATURE TOGGLE =================
         if (! empty($menu['feature']) && Setting::get($menu['feature'], '1') == '0') {
             return null;
         }
 
-        // 4. Cek ketersediaan route
+        // ================= CEK ROUTE =================
         if (! empty($menu['route'])) {
             if (! Route::has($menu['route'])) {
                 return null;
@@ -53,7 +66,7 @@ class MenuBuilder
             $menu['url'] = route($menu['route']);
         }
 
-        // 5. Proses children
+        // ================= PROSES CHILDREN =================
         if (! empty($menu['children'])) {
             $children = [];
             foreach ($menu['children'] as $child) {
@@ -63,7 +76,7 @@ class MenuBuilder
                 }
             }
             if (empty($children)) {
-                return null;
+                return null; // Sembunyikan parent jika semua anaknya tersembunyi
             }
             $menu['children'] = $children;
         }
@@ -73,7 +86,7 @@ class MenuBuilder
 
     public static function isActive(array $menu): bool
     {
-        if (! empty($menu['route']) && request()->routeIs($menu['route'])) {
+        if (isset($menu['route']) && request()->routeIs($menu['route'])) {
             return true;
         }
         if (! empty($menu['children'])) {

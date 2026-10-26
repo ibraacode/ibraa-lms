@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class OtherIncome extends Model
 {
-    protected $fillable = ['source', 'description', 'amount', 'received_at', 'reference', 'recorded_by'];
+    protected $fillable = ['academic_year','source', 'description', 'amount', 'received_at', 'reference', 'recorded_by'];
 
     protected function casts(): array
     {

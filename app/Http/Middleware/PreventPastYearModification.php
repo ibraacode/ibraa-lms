@@ -5,18 +5,22 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use App\Helpers\AcademicYear;
 
 class PreventPastYearModification
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $currentYear = \App\Helpers\AcademicYear::current();
-        $globalYear = \App\Models\Setting::get('active_academic_year', '2026/2027');
+        // 1. JIKA SEDANG DI HALAMAN PENGATURAN ATAU MANAJEMEN T.A, IZINKAN (Bypass)
+        // Ini agar Admin bisa mengubah T.A Global meskipun sedang melihat tahun lama.
+        if ($request->routeIs('admin.settings.*') || $request->routeIs('admin.academic-year.*')) {
+            return $next($request);
+        }
 
-        // Jika yang dipilih bukan tahun aktif saat ini, dan user mencoba mengirim data (POST/PUT/DELETE)
-        if ($currentYear !== $globalYear && in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+        // 2. JIKA BUKAN TAHUN AKTIF DAN MENCOBA UBAH DATA, BLOKIR
+        if (!AcademicYear::isActive() && in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'])) {
             return back()->withErrors([
-                'error' => 'Akses Ditolak: Tahun ajaran ' . $currentYear . ' sudah berakhir. Data hanya dapat dilihat (Read-Only).'
+                'error' => 'Akses Ditolak: Tahun ajaran ' . AcademicYear::current() . ' sudah berakhir. Data hanya dapat dilihat (Read-Only).'
             ]);
         }
 

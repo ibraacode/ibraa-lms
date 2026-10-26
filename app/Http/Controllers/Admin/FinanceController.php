@@ -11,6 +11,7 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use App\Helpers\AcademicYear;
 
 class FinanceController extends Controller
 {
@@ -42,13 +43,17 @@ class FinanceController extends Controller
     }
 
       // ================== PEMASUKAN LAIN (BOS, HIBAH) ==================
-    public function otherIncomes()
+        public function otherIncomes()
     {
-        $incomes = \App\Models\OtherIncome::with('recordedBy')->latest('received_at')->paginate(15);
+        $incomes = \App\Models\OtherIncome::with('recordedBy')
+            ->where('academic_year', AcademicYear::current()) // <-- FILTER T.A
+            ->latest('received_at')
+            ->paginate(15);
+            
         return view('admin.finance.other-incomes', compact('incomes'));
     }
 
-    public function storeOtherIncome(Request $request)
+        public function storeOtherIncome(Request $request)
     {
         $request->validate([
             'source' => 'required|string|max:100',
@@ -59,6 +64,7 @@ class FinanceController extends Controller
         ]);
 
         \App\Models\OtherIncome::create([
+            'academic_year' => AcademicYear::current(), // <-- TAMBAHKAN INI
             'source' => $request->source,
             'description' => $request->description,
             'amount' => $request->amount,
@@ -72,9 +78,11 @@ class FinanceController extends Controller
     }
 
     // ================== TAGIHAN (INVOICE) ==================
-    public function invoices(Request $request)
+        public function invoices(Request $request)
     {
-        $query = Invoice::with(['student', 'feeType'])->latest();
+        $query = Invoice::with(['student', 'feeType'])
+            ->where('academic_year', AcademicYear::current()) // <-- FILTER T.A
+            ->latest();
 
         if ($request->filled('search')) {
             $query->whereHas('student', function ($q) use ($request) {
@@ -93,7 +101,7 @@ class FinanceController extends Controller
         return view('admin.finance.invoices', compact('invoices', 'feeTypes'));
     }
 
-    public function storeInvoice(Request $request)
+        public function storeInvoice(Request $request)
     {
         $request->validate([
             'student_id' => 'required|exists:users,id',
@@ -105,6 +113,7 @@ class FinanceController extends Controller
         ]);
 
         $invoice = Invoice::create([
+            'academic_year' => AcademicYear::current(), // <-- TAMBAHKAN INI
             'invoice_number' => 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(6)),
             'student_id' => $request->student_id,
             'fee_type_id' => $request->fee_type_id,
@@ -156,13 +165,24 @@ class FinanceController extends Controller
     }
 
     // ================== REKAP ==================
-        public function summary()
+            public function summary()
     {
-        $totalInvoiced = Invoice::where('status', '!=', 'exempt')->sum('amount');
-        $totalPaidFromStudents = Payment::sum('amount_paid');
-        $totalOtherIncome = \App\Models\OtherIncome::sum('amount'); // TAMBAHAN
+        $currentYear = AcademicYear::current();
+
+        // Tagihan di T.A aktif
+        $totalInvoiced = Invoice::where('academic_year', $currentYear)
+            ->where('status', '!=', 'exempt')
+            ->sum('amount');
+
+        // Pembayaran (mengikuti tagihan di T.A aktif)
+        $totalPaidFromStudents = Payment::whereHas('invoice', function($q) use ($currentYear) {
+            $q->where('academic_year', $currentYear);
+        })->sum('amount_paid');
+
+        // Pemasukan BOS/Hibah di T.A aktif
+        $totalOtherIncome = \App\Models\OtherIncome::where('academic_year', $currentYear)->sum('amount');
         
-        $totalRevenue = $totalPaidFromStudents + $totalOtherIncome; // Total uang masuk
+        $totalRevenue = $totalPaidFromStudents + $totalOtherIncome;
         $totalOutstanding = $totalInvoiced - $totalPaidFromStudents;
 
         $stats = [
@@ -171,7 +191,7 @@ class FinanceController extends Controller
             'total_other_income' => $totalOtherIncome,
             'total_revenue' => $totalRevenue,
             'total_outstanding' => $totalOutstanding,
-            'total_exempt' => Invoice::where('status', 'exempt')->count(),
+            'total_exempt' => Invoice::where('academic_year', $currentYear)->where('status', 'exempt')->count(),
         ];
 
         return view('admin.finance.summary', compact('stats'));

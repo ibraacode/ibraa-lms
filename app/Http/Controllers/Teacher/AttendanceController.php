@@ -9,23 +9,25 @@ use App\Models\AttendanceRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Helpers\AcademicYear;
 
 class AttendanceController extends Controller
 {
-    // Menampilkan daftar jadwal guru hari ini
     public function index()
     {
-        $today = Carbon::now()->locale('id')->isoFormat('dddd'); // Senin, Selasa, dll
+        $currentYear = AcademicYear::current();
+        $today = Carbon::now()->locale('id')->isoFormat('dddd');
         $teacherId = Auth::id();
 
-        // Ambil jadwal guru hari ini
         $schedules = Schedule::with(['classroom', 'subject'])
             ->where('teacher_id', $teacherId)
             ->where('day', $today)
+            ->whereHas('classroom', function($q) use ($currentYear) {
+                $q->where('academic_year', $currentYear);
+            })
             ->orderBy('start_time')
             ->get();
 
-        // Cek apakah sesi sudah dibuka untuk masing-masing jadwal hari ini
         $sessions = AttendanceSession::whereIn('schedule_id', $schedules->pluck('id'))
             ->where('date', Carbon::today())
             ->get()
@@ -34,10 +36,8 @@ class AttendanceController extends Controller
         return view('teacher.attendance.index', compact('schedules', 'sessions', 'today'));
     }
 
-    // Membuka sesi presensi
     public function openSession(Schedule $schedule)
     {
-        // Pastikan guru hanya bisa buka jadwalnya sendiri
         if ($schedule->teacher_id !== Auth::id()) {
             abort(403);
         }
@@ -47,7 +47,6 @@ class AttendanceController extends Controller
             ['opened_by' => Auth::id()]
         );
 
-        // Otomatis isi semua siswa dengan status 'alpa' jika sesi baru dibuat
         if ($session->wasRecentlyCreated) {
             $students = $schedule->classroom->students;
             foreach ($students as $student) {
@@ -62,7 +61,6 @@ class AttendanceController extends Controller
         return redirect()->route('teacher.attendance.show', $session->id);
     }
 
-    // Menampilkan form presensi untuk sesi tertentu
     public function show(AttendanceSession $session)
     {
         if ($session->schedule->teacher_id !== Auth::id()) {
@@ -75,7 +73,6 @@ class AttendanceController extends Controller
         return view('teacher.attendance.show', compact('session', 'records'));
     }
 
-    // Menyimpan perubahan presensi
     public function update(Request $request, AttendanceSession $session)
     {
         if ($session->schedule->teacher_id !== Auth::id()) {

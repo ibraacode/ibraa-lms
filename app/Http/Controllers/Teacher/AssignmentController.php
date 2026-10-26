@@ -9,17 +9,25 @@ use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AuditLog;
+use App\Helpers\AcademicYear;
 
 class AssignmentController extends Controller
 {
-    // Daftar jadwal yang diampu guru (untuk pilih kelas saat buat tugas)
     public function index()
     {
+        $currentYear = AcademicYear::current();
+
         $schedules = Schedule::with(['classroom', 'subject'])
             ->where('teacher_id', Auth::id())
+            ->whereHas('classroom', function($q) use ($currentYear) {
+                $q->where('academic_year', $currentYear);
+            })
             ->get();
 
         $assignments = Assignment::with(['schedule.classroom', 'schedule.subject'])
+            ->whereHas('schedule.classroom', function($q) use ($currentYear) {
+                $q->where('academic_year', $currentYear);
+            })
             ->whereHas('schedule', function ($q) {
                 $q->where('teacher_id', Auth::id());
             })
@@ -39,7 +47,6 @@ class AssignmentController extends Controller
             'max_score' => 'required|integer|min:1|max:100',
         ]);
 
-        // Pastikan guru hanya bisa membuat tugas untuk jadwalnya sendiri
         $schedule = Schedule::findOrFail($request->schedule_id);
         if ($schedule->teacher_id !== Auth::id()) {
             abort(403);
@@ -50,7 +57,6 @@ class AssignmentController extends Controller
         return back()->with('success', 'Tugas berhasil dibuat.');
     }
 
-    // Halaman untuk melihat pengumpulan siswa & memberi nilai
     public function show(Assignment $assignment)
     {
         if ($assignment->schedule->teacher_id !== Auth::id()) {
@@ -59,7 +65,6 @@ class AssignmentController extends Controller
 
         $assignment->load('schedule.classroom');
         
-        // Ambil semua siswa di kelas tersebut, dan sertakan data pengumpulan mereka (jika ada)
         $students = \App\Models\User::role('siswa')
             ->whereHas('studentProfile', function($q) use ($assignment) {
                 $q->where('classroom_id', $assignment->schedule->classroom_id);
@@ -72,7 +77,6 @@ class AssignmentController extends Controller
         return view('teacher.assignments.show', compact('assignment', 'students'));
     }
 
-    // Menyimpan nilai dari guru
     public function grade(Request $request, Assignment $assignment)
     {
         if ($assignment->schedule->teacher_id !== Auth::id()) {
@@ -85,7 +89,6 @@ class AssignmentController extends Controller
         ]);
 
         foreach ($data['scores'] as $studentId => $score) {
-            // Update atau buat data submission (jika siswa belum mengumpulkan, guru tetap bisa beri nilai)
             Submission::updateOrCreate(
                 ['assignment_id' => $assignment->id, 'student_id' => $studentId],
                 [

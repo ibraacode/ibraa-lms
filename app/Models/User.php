@@ -78,4 +78,8 @@ class User extends Authenticatable
     {
         return $this->hasOne(InternshipPlacement::class, 'student_id');
     }
+    public function studentViolations()
+    {
+        return $this->hasMany(StudentViolation::class, 'student_id');
+    }
 }

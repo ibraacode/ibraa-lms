@@ -15,6 +15,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -64,7 +65,7 @@
                 <div class="flex items-center gap-2 sm:gap-3">
                     
                     {{-- DROPDOWN TAHUN AJARAN (Disembunyikan di halaman Profil) --}}
-                    @if(!request()->routeIs('profile.*') && (auth()->user()->hasRole('super-admin') || auth()->user()->hasRole('tu')))
+                    @if(!request()->routeIs('profile.*'))
                         <form method="POST" action="{{ route('admin.academic-year.switch') }}" class="border-r border-border pr-2 mr-1 sm:pr-3 sm:mr-2 flex items-center gap-1">
                             @csrf
                             <select name="academic_year" onchange="this.form.submit()" class="px-2 py-1.5 rounded-lg border border-border bg-background text-xs font-bold text-primary focus:outline-none cursor-pointer max-w-[100px] sm:max-w-none truncate">

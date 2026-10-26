@@ -1,6 +1,11 @@
 <?php
 
 return [
+    // ================= KATEGORI: UTAMA =================
+    [
+        'label' => 'UTAMA',
+        'route' => null, // Header Pemisah
+    ],
     [
         'label' => 'Dashboard',
         'route' => 'dashboard',
@@ -11,6 +16,24 @@ return [
         'route' => 'profile.edit',
         'icon' => 'user',
         'permission' => 'profile.view-own',
+    ],
+    [
+        'label' => 'Pengumuman',
+        'route' => 'admin.announcements.index',
+        'icon' => 'bell',
+        'permission' => 'announcements.create',
+    ],
+    [
+        'label' => 'Pusat Bantuan',
+        'route' => 'help.index',
+        'icon' => 'info',
+    ],
+
+    // ================= KATEGORI: ADMINISTRASI & AKADEMIK =================
+    [
+        'label' => 'ADMINISTRASI & AKADEMIK',
+        'route' => null,
+        'permission' => 'users.view', // Hanya muncul jika punya akses admin
     ],
     [
         'label' => 'Manajemen Pengguna',
@@ -38,12 +61,6 @@ return [
         ],
     ],
     [
-        'label' => 'Ekstrakurikuler',
-        'route' => 'admin.extracurriculars.index',
-        'icon' => 'award',
-        'permission' => 'extracurricular.manage',
-    ],
-    [
         'label' => 'Akademik',
         'icon' => 'book',
         'permission' => 'academic.subjects.manage',
@@ -57,7 +74,7 @@ return [
             [
                 'label' => 'Kelas / Rombel',
                 'route' => 'admin.academic.classrooms',
-                'icon' => 'building', // Menggunakan ikon gedung
+                'icon' => 'building',
                 'permission' => 'academic.classrooms.manage',
             ],
             [
@@ -69,7 +86,7 @@ return [
             [
                 'label' => 'Penempatan Kelas',
                 'route' => 'admin.students.assign',
-                'icon' => 'certificate', // Menggunakan ikon sertifikat
+                'icon' => 'certificate',
                 'permission' => 'academic.classrooms.manage',
             ],
             [
@@ -84,23 +101,111 @@ return [
                 'icon' => 'chart-pie',
                 'permission' => 'attendance.manage',
             ],
+              [
+                'label' => 'Master Data (Jurusan/Pekerjaan)',
+                'route' => 'admin.master-data.index',
+                'icon' => 'list',
+                'permission' => 'academic.subjects.manage',
+            ],
         ],
     ],
-      [
+    [
         'label' => 'Tahun Ajaran',
         'route' => 'admin.academic-year.index',
-        'icon' => 'calendar', // Pastikan calendar.svg ada
+        'icon' => 'calendar',
         'permission' => 'academic.subjects.manage',
+    ],
+    [
+        'label' => 'Ekstrakurikuler',
+        'route' => 'admin.extracurriculars.index',
+        'icon' => 'award',
+        'permission' => 'extracurricular.manage',
     ],
     [
         'label' => 'Surat-Menyurat',
         'route' => 'admin.letters.index',
-        'icon' => 'message-2', // Menggunakan ikon pesan/surat
+        'icon' => 'message-2',
         'permission' => 'letters.manage',
     ],
     [
+        'label' => 'PPDB Online',
+        'route' => 'admin.admissions.index',
+        'icon' => 'file',
+        'permission' => 'admissions.manage',
+        'feature' => 'feature_ppdb',
+    ],
+
+    // ================= KATEGORI: KEUANGAN =================
+    [
+        'label' => 'KEUANGAN',
+        'route' => null,
+        'permission' => 'finance.view',
+    ],
+    [
+        'label' => 'Jenis Tagihan',
+        'route' => 'admin.finance.fee-types',
+        'icon' => 'discount',
+        'permission' => 'finance.view',
+    ],
+    [
+        'label' => 'Tagihan Siswa',
+        'route' => 'admin.finance.invoices',
+        'icon' => 'credit-card',
+        'permission' => 'finance.view',
+    ],
+    [
+        'label' => 'Rekap Keuangan',
+        'route' => 'admin.finance.summary',
+        'icon' => 'chart-pie',
+        'permission' => 'finance.view',
+    ],
+    [
+        'label' => 'Pemasukan Lain (BOS)',
+        'route' => 'admin.finance.other-incomes',
+        'icon' => 'coin-stack',
+        'permission' => 'finance.view',
+    ],
+
+    // ================= KATEGORI: LAYANAN SISWA =================
+    [
+        'label' => 'LAYANAN SISWA',
+        'route' => null,
+        'permission' => 'counseling.view',
+    ],
+    [
+        'label' => 'Bimbingan Konseling',
+        'route' => 'counselor.cases.index',
+        'icon' => 'message-2',
+        'permission' => 'counseling.view',
+    ],
+    [
+        'label' => 'Poin Pelanggaran',
+        'icon' => 'alert-triangle',
+        'permission' => 'violations.manage',
+        'children' => [
+            [
+                'label' => 'Catat Pelanggaran',
+                'route' => 'admin.violations.index',
+                'icon' => 'alert-octagon',
+                'permission' => 'violations.manage',
+            ],
+            [
+                'label' => 'Jenis Pelanggaran',
+                'route' => 'admin.violations.types',
+                'icon' => 'list',
+                'permission' => 'violations.manage',
+            ],
+            [
+                'label' => 'Rekap Poin',
+                'route' => 'admin.violations.recap',
+                'icon' => 'chart-pie',
+                'permission' => 'violations.manage',
+            ],
+        ],
+    ],
+    [
         'label' => 'Absensi Harian (QR)',
-        'icon' => 'computer-camera', // Menggunakan ikon kamera
+        'icon' => 'computer-camera',
         'permission' => 'attendance.manage',
         'feature' => 'feature_qr_attendance',
         'children' => [
@@ -121,8 +226,15 @@ return [
     [
         'label' => 'PKL (SMK)',
         'route' => 'admin.internship.index',
-        'icon' => 'building', // Pastikan file building.svg ada
+        'icon' => 'building',
         'permission' => 'internship.manage',
+    ],
+
+    // ================= KATEGORI: RUANG GURU =================
+    [
+        'label' => 'RUANG GURU',
+        'route' => null,
+        'permission' => 'teacher.attendance', // Hanya muncul jika punya akses guru
     ],
     [
         'label' => 'Presensi Mengajar',
@@ -133,14 +245,8 @@ return [
     [
         'label' => 'Manajemen Tugas',
         'route' => 'teacher.assignments.index',
-        'icon' => 'bookmark', // Menggunakan ikon bookmark
+        'icon' => 'bookmark',
         'permission' => 'teacher.assignments',
-    ],
-    [
-        'label' => 'Ekskul Saya',
-        'route' => 'teacher.extracurriculars.index',
-        'icon' => 'award',
-        'permission' => 'extracurricular.assess',
     ],
     [
         'label' => 'Jurnal Mengajar',
@@ -154,30 +260,30 @@ return [
         'icon' => 'chart-pie',
         'permission' => 'teacher.gradebook',
     ],
-      [
+    [
         'label' => 'Nilai Karakter',
         'route' => 'teacher.character.index',
-        'icon' => 'award', // Gunakan ikon award jika ada
+        'icon' => 'award',
         'permission' => 'character.grade',
     ],
     [
-        'label' => 'Pengumuman',
-        'route' => 'admin.announcements.index',
-        'icon' => 'bell',
-        'permission' => 'announcements.create',
-    ],
-      [
-        'label' => 'PPDB Online',
-        'route' => 'admin.admissions.index',
-        'icon' => 'file',
-        'permission' => 'admissions.manage',
-        'feature' => 'feature_ppdb',
+        'label' => 'Ekskul Saya',
+        'route' => 'teacher.extracurriculars.index',
+        'icon' => 'award',
+        'permission' => 'extracurricular.assess',
     ],
     [
-        'label' => 'Bimbingan Konseling',
-        'route' => 'counselor.cases.index',
-        'icon' => 'message-2', // Menggunakan ikon pesan/konseling
-        'permission' => 'counseling.view',
+        'label' => 'Bimbingan PKL',
+        'route' => 'teacher.internship.index',
+        'icon' => 'briefcase',
+        'permission' => 'internship.assess',
+    ],
+
+    // ================= KATEGORI: RUANG SISWA =================
+    [
+        'label' => 'RUANG SISWA',
+        'route' => null,
+        'permission' => 'student.attendance', // Hanya muncul jika punya akses siswa
     ],
     [
         'label' => 'Presensi Saya',
@@ -211,52 +317,17 @@ return [
         'permission' => 'extracurricular.join',
     ],
     [
-        'label' => 'Keuangan',
-        'icon' => 'bank',
-        'permission' => 'finance.view',
-        'children' => [
-            [
-                'label' => 'Jenis Tagihan',
-                'route' => 'admin.finance.fee-types',
-                'icon' => 'discount',
-                'permission' => 'finance.view',
-            ],
-            [
-                'label' => 'Tagihan Siswa',
-                'route' => 'admin.finance.invoices',
-                'icon' => 'credit-card',
-                'permission' => 'finance.view',
-            ],
-            [
-                'label' => 'Rekap Keuangan',
-                'route' => 'admin.finance.summary',
-                'icon' => 'chart-pie',
-                'permission' => 'finance.view',
-            ],
-            [
-                'label' => 'Pemasukan Lain (BOS)',
-                'route' => 'admin.finance.other-incomes',
-                'icon' => 'coin-stack',
-                'permission' => 'finance.view',
-            ],
-        ],
-    ],
-  [
         'label' => 'PKL Saya',
         'route' => 'student.internship.index',
-        'icon' => 'briefcase', // Pastikan file briefcase.svg ada
+        'icon' => 'briefcase',
         'permission' => 'internship.log',
     ],
-      [
-        'label' => 'Bimbingan PKL',
-        'route' => 'teacher.internship.index',
-        'icon' => 'briefcase',
-        'permission' => 'internship.assess',
-    ],
-      [
-        'label' => 'Pusat Bantuan',
-        'route' => 'help.index',
-        'icon' => 'info',
+
+    // ================= KATEGORI: SISTEM =================
+    [
+        'label' => 'SISTEM',
+        'route' => null,
+        'permission' => 'system.settings',
     ],
     [
         'label' => 'Pengaturan Sistem',

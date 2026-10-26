@@ -14,7 +14,6 @@
                 <thead class="bg-muted/50 border-b border-border">
                     <tr>
                         <th class="px-4 py-3">Nama Siswa</th>
-                        <th class="px-4 py-3">NIS</th>
                         <th class="px-4 py-3">Kelas Saat Ini</th>
                         <th class="px-4 py-3">Pindahkan Ke</th>
                     </tr>
@@ -22,7 +21,7 @@
                 <tbody class="divide-y divide-border">
                     @forelse($students as $student)
                         @php
-                            // Ambil data dari $profiles array, bukan relasi $student->studentProfile
+                            // Ambil data dari $profiles array
                             $profile = $profiles[$student->id] ?? null;
                             $currentClassId = $profile ? $profile->classroom_id : null;
                             
@@ -30,8 +29,23 @@
                             $currentClass = $currentClassId ? $classrooms->where('id', $currentClassId)->first() : null;
                         @endphp
                         <tr>
-                            <td class="px-4 py-3 font-medium">{{ $student->name }}</td>
-                            <td class="px-4 py-3">{{ $student->nis }}</td>
+                            {{-- KOLOM 1: NAMA & NIS + BADGE DAFTAR ULANG --}}
+                            <td class="px-4 py-3">
+                                <div class="font-medium flex items-center gap-2 flex-wrap">
+                                    {{ $student->name }}
+                                    
+                                    @if($profile)
+                                        @if($profile->registration_status === 'pending')
+                                            <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded" title="Belum Daftar Ulang">⏳ Belum Daftar Ulang</span>
+                                        @else
+                                            <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded" title="Sudah Daftar Ulang">✓ Daftar Ulang</span>
+                                        @endif
+                                    @endif
+                                </div>
+                                <div class="text-xs text-foreground/60 mt-0.5">{{ $student->nis ? 'NIS: '.$student->nis : '-' }}</div>
+                            </td>
+
+                            {{-- KOLOM 2: KELAS SAAT INI --}}
                             <td class="px-4 py-3">
                                 @if($currentClass)
                                     <span class="px-2 py-1 rounded-md bg-primary text-white text-xs font-bold">
@@ -43,6 +57,8 @@
                                     </span>
                                 @endif
                             </td>
+
+                            {{-- KOLOM 3: AKSI PINDAH KELAS --}}
                             <td class="px-4 py-3">
                                 <form method="POST" action="{{ route('admin.students.update-class', $student->id) }}" class="flex items-center gap-2">
                                     @csrf
@@ -61,7 +77,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-foreground/50">Belum ada siswa.</td></tr>
+                        <tr><td colspan="3" class="px-4 py-6 text-center text-foreground/50">Belum ada siswa.</td></tr>
                     @endforelse
                 </tbody>
             </table>

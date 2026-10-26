@@ -8,6 +8,10 @@
         <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{{ $errors->first() }}</div>
     @endif
 
+    @php
+    $isReadOnly = !\App\Helpers\AcademicYear::isActive();
+@endphp
+
     <div class="space-y-4">
         @forelse($assignments as $a)
             @php
@@ -40,6 +44,8 @@
                         <p class="font-medium text-green-600">✓ Sudah dikumpulkan</p>
                         <p class="text-foreground/60 text-xs mt-1">{{ $sub->answer_text }}</p>
                     </div>
+                @elseif($isReadOnly)
+                    <p class="text-sm text-gray-500 italic bg-gray-50 p-2 rounded-lg inline-block">Arsip tahun ajaran lalu (Tidak dapat dikumpulkan)</p>
                 @elseif(!$isPast)
                     <button @click="open = !open" class="text-sm text-primary font-medium hover:underline">Kumpulkan Tugas</button>
                     <div x-show="open" style="display: none;" class="mt-3">

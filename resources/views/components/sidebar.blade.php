@@ -16,7 +16,7 @@
     };
 @endphp
 
-{{-- OVERLAY GELAP (Hanya muncul di mobile saat sidebar terbuka) --}}
+{{-- OVERLAY GELAP --}}
 <div x-show="sidebarOpen" 
      @click="sidebarOpen = false" 
      class="fixed inset-0 bg-black/60 z-[60] md:hidden" 
@@ -28,7 +28,7 @@
     class="fixed inset-y-0 left-0 z-[70] w-[280px] bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out md:static md:translate-x-0 flex flex-col h-screen overflow-hidden"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
 >
-    {{-- Bagian Atas (Logo & Menu yang bisa di-scroll) --}}
+    {{-- Bagian Atas (Logo & Menu) --}}
     <div class="flex-1 overflow-y-auto p-6 w-full">
         
         {{-- LOGO HEADER --}}
@@ -48,7 +48,6 @@
                 @endif
             </a>
 
-            {{-- Tombol Close Mobile --}}
             <button @click="sidebarOpen = false" class="md:hidden p-1 text-gray-500 hover:text-gray-900 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -57,59 +56,62 @@
         {{-- MENU LIST --}}
         <ul class="flex flex-col gap-1 pb-4">
             @foreach ($menus as $menu)
-                @if ($loop->first)
-                    <li><h3 class="text-[11px] font-bold text-gray-400 tracking-wider mb-3 px-3 uppercase mt-2">DAILY USE</h3></li>
-                @endif
-
-                @if ($loop->index == 5)
-                    <li><h3 class="text-[11px] font-bold text-gray-400 tracking-wider mb-3 px-3 uppercase mt-6">OTHERS</h3></li>
-                @endif
-
-                @php $activeState = $isMenuActive($menu); @endphp
-
-                @if (!empty($menu['children']))
-                    <li x-data="{ open: {{ $activeState ? 'true' : 'false' }} }">
-                        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 rounded-full text-sm font-semibold transition-all {{ $activeState ? 'bg-[#2F80ED] text-white' : 'text-gray-700 hover:bg-gray-100' }}">
-                            <div class="flex items-center gap-3.5 w-full min-w-0">
-                                <img src="{{ asset('icons/' . ($menu['icon'] ?? 'circle') . '.svg') }}" alt="icon" class="w-5 h-5 shrink-0 object-contain {{ $activeState ? 'brightness-0 invert' : 'opacity-60' }}" onerror="this.style.display='none'">
-                                <span class="whitespace-nowrap overflow-hidden text-ellipsis text-left truncate">{{ $menu['label'] }}</span>
-                            </div>
-                            <span x-show="!open" class="text-[10px] shrink-0">▶</span>
-                            <span x-show="open" class="text-[10px] shrink-0">▼</span>
-                        </button>
-
-                        <div x-show="open" x-collapse class="flex flex-col gap-1 mt-1 pl-[2.5rem] pr-2">
-                            @foreach ($menu['children'] as $child)
-                                @php 
-                                    $childActive = (isset($child['route']) && request()->routeIs($child['route'])) || (isset($child['url']) && request()->url() == url($child['url']));
-                                @endphp
-                                <a href="{{ $child['url'] }}" class="py-2 text-sm font-medium transition-colors hover:text-[#2F80ED] truncate {{ $childActive ? 'text-[#2F80ED] font-bold' : 'text-gray-500' }}">
-                                    {{ $child['label'] }}
-                                </a>
-                            @endforeach
-                        </div>
+                
+                {{-- CEK JIKA INI ADALAH HEADER KATEGORI --}}
+                @if(isset($menu['is_header']) && $menu['is_header'])
+                    <li class="mt-6 first:mt-0">
+                        <h3 class="text-[11px] font-extrabold text-gray-400 tracking-wider px-3 uppercase">
+                            {{ $menu['label'] }}
+                        </h3>
                     </li>
                 @else
-                    <li>
-                        <a href="{{ $menu['url'] }}" class="w-full flex items-center justify-between px-4 py-3 rounded-full text-sm font-semibold transition-all {{ $activeState ? 'bg-[#2F80ED] text-white' : 'text-gray-700 hover:bg-gray-100' }}">
-                            <div class="flex items-center gap-3.5 w-full min-w-0">
-                                <img src="{{ asset('icons/' . ($menu['icon'] ?? 'circle') . '.svg') }}" alt="icon" class="w-5 h-5 shrink-0 object-contain {{ $activeState ? 'brightness-0 invert' : 'opacity-60' }}" onerror="this.style.display='none'">
-                                <span class="whitespace-nowrap overflow-hidden text-ellipsis truncate">{{ $menu['label'] }}</span>
-                            </div>
+                
+                    @php $activeState = $isMenuActive($menu); @endphp
 
-                            @if($menu['label'] == 'Messages' || $menu['label'] == 'Pesan')
-                                <span class="ml-auto px-2 py-0.5 text-[11px] font-bold rounded-full shrink-0 {{ $activeState ? 'bg-white text-[#2F80ED]' : 'bg-orange-500 text-white' }}">
-                                    12
-                                </span>
-                            @endif
-                        </a>
-                    </li>
+                    @if (!empty($menu['children']))
+                        <li x-data="{ open: {{ $activeState ? 'true' : 'false' }} }">
+                            <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 rounded-full text-sm font-bold transition-all {{ $activeState ? 'bg-[#2F80ED] text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                                <div class="flex items-center gap-3.5 w-full min-w-0">
+                                    <img src="{{ asset('icons/' . ($menu['icon'] ?? 'circle') . '.svg') }}" alt="icon" class="w-5 h-5 shrink-0 object-contain {{ $activeState ? 'brightness-0 invert' : 'opacity-60' }}" onerror="this.style.display='none'">
+                                    <span class="whitespace-nowrap overflow-hidden text-ellipsis text-left truncate">{{ $menu['label'] }}</span>
+                                </div>
+                                <span x-show="!open" class="text-[10px] shrink-0">▶</span>
+                                <span x-show="open" class="text-[10px] shrink-0">▼</span>
+                            </button>
+
+                            <div x-show="open" x-collapse class="flex flex-col gap-1 mt-1 pl-[2.5rem] pr-2">
+                                @foreach ($menu['children'] as $child)
+                                    @php 
+                                        $childActive = (isset($child['route']) && request()->routeIs($child['route'])) || (isset($child['url']) && request()->url() == url($child['url']));
+                                    @endphp
+                                    <a href="{{ $child['url'] }}" class="py-2 text-sm font-medium transition-colors hover:text-[#2F80ED] truncate {{ $childActive ? 'text-[#2F80ED] font-bold' : 'text-gray-500' }}">
+                                        {{ $child['label'] }}
+                                    </a>
+                                @endforeach
+                            </div>
+                        </li>
+                    @else
+                        <li>
+                            <a href="{{ $menu['url'] }}" class="w-full flex items-center justify-between px-4 py-3 rounded-full text-sm font-bold transition-all {{ $activeState ? 'bg-[#2F80ED] text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                                <div class="flex items-center gap-3.5 w-full min-w-0">
+                                    <img src="{{ asset('icons/' . ($menu['icon'] ?? 'circle') . '.svg') }}" alt="icon" class="w-5 h-5 shrink-0 object-contain {{ $activeState ? 'brightness-0 invert' : 'opacity-60' }}" onerror="this.style.display='none'">
+                                    <span class="whitespace-nowrap overflow-hidden text-ellipsis truncate">{{ $menu['label'] }}</span>
+                                </div>
+
+                                @if($menu['label'] == 'Messages' || $menu['label'] == 'Pesan')
+                                    <span class="ml-auto px-2 py-0.5 text-[11px] font-extrabold rounded-full shrink-0 {{ $activeState ? 'bg-white text-[#2F80ED]' : 'bg-orange-500 text-white' }}">
+                                        12
+                                    </span>
+                                @endif
+                            </a>
+                        </li>
+                    @endif
                 @endif
             @endforeach
         </ul>
     </div>
 
-    {{-- Bagian Bawah: Get Pro Card --}}
+    {{-- GET PRO CARD --}}
     <div class="p-6 pt-0 shrink-0 w-full">
         <a href="#" class="bg-black text-white p-4 rounded-3xl flex items-center gap-3 hover:bg-gray-800 transition-all cursor-pointer">
             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0">
@@ -118,7 +120,7 @@
                 </svg>
             </div>
             <div class="overflow-hidden">
-                <h4 class="font-bold text-sm text-white whitespace-nowrap">Get Pro</h4>
+                <h4 class="font-extrabold text-sm text-white whitespace-nowrap">Get Pro</h4>
                 <p class="text-xs text-gray-400 whitespace-nowrap">Unlock features</p>
             </div>
         </a>

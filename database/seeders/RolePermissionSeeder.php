@@ -59,6 +59,9 @@ class RolePermissionSeeder extends Seeder
             'character.view', 'character.grade',
                       // PKL
             'internship.manage', 'internship.assess', 'internship.log',
+                      // Poin Pelanggaran
+            'violations.view',
+            'violations.manage',
         ];
 
         foreach ($permissions as $perm) {
@@ -87,6 +90,7 @@ class RolePermissionSeeder extends Seeder
             'admissions.view', 'admissions.manage',
             'character.view', 'character.grade',
             'internship.manage',
+            'violations.view', 'violations.manage',
         ]);
 
         // Guru
@@ -101,6 +105,7 @@ class RolePermissionSeeder extends Seeder
             'extracurricular.view', 'extracurricular.assess',
             'character.view', 'character.grade',
             'internship.assess',
+            'violations.view', 'violations.manage',
         ]);
 
         // Siswa
@@ -118,6 +123,7 @@ class RolePermissionSeeder extends Seeder
         $bk->syncPermissions([
             'counseling.view', 'counseling.manage',
             'profile.view-own', 'profile.update-own',
+            'violations.view', 'violations.manage',
         ]);
 
         // Role tambahan (tanpa permission default)

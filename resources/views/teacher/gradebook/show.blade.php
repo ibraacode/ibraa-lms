@@ -7,6 +7,16 @@
         </div>
     </div>
 
+    @php
+    $isReadOnly = !\App\Helpers\AcademicYear::isActive();
+@endphp
+
+    @if($isReadOnly)
+        <div class="mb-4 p-3 rounded-lg bg-yellow-50 text-yellow-700 text-sm border border-yellow-200">
+            <b>Mode Arsip:</b> Nilai ini dari tahun ajaran sebelumnya dan tidak dapat diubah.
+        </div>
+    @endif
+
     <div class="bg-card border border-border rounded-xl overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">

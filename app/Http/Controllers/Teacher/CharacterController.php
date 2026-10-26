@@ -6,17 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Classroom;
 use App\Models\CharacterGrade;
-use App\Models\Setting;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\AcademicYear;
 
 class CharacterController extends Controller
 {
-    public function index()
+        public function index()
     {
-        // Ambil semua kelas untuk dipilih
-        $classrooms = Classroom::all();
+        $currentYear = \App\Helpers\AcademicYear::current();
+        
+        // Cek apakah user adalah Super Admin / TU (bisa lihat semua)
+        if (auth()->user()->hasAnyRole(['super-admin', 'tu'])) {
+            $classrooms = Classroom::where('academic_year', $currentYear)->get();
+        } else {
+            // Jika Guru, HANYA kelas yang dia wali-kan
+            $classrooms = Classroom::where('academic_year', $currentYear)
+                ->where('homeroom_teacher_id', auth()->id())
+                ->get();
+        }
+        
         return view('teacher.character.index', compact('classrooms'));
     }
 
@@ -27,9 +37,8 @@ class CharacterController extends Controller
         ]);
 
         $semester = $request->semester;
-        $academicYear = Setting::get('active_academic_year', '2026/2027');
+        $academicYear = AcademicYear::current();
 
-        // Ambil semua siswa di kelas ini
         $students = User::role('siswa')
             ->whereHas('studentProfile', function ($q) use ($classroom) {
                 $q->where('classroom_id', $classroom->id);
@@ -51,7 +60,7 @@ class CharacterController extends Controller
             'social_grade' => 'nullable|array',
         ]);
 
-        $academicYear = Setting::get('active_academic_year', '2026/2027');
+        $academicYear = AcademicYear::current();
         $semester = $request->semester;
 
         foreach ($request->spiritual_grade as $studentId => $spiritual) {
@@ -72,7 +81,6 @@ class CharacterController extends Controller
         }
 
         AuditLog::record('CHARACTER_GRADE', 'Menyimpan nilai karakter untuk kelas ' . $classroom->name . ' semester ' . $semester);
-
         return back()->with('success', 'Nilai karakter berhasil disimpan.');
     }
 }

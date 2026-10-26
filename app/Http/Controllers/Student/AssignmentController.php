@@ -7,11 +7,13 @@ use App\Models\Assignment;
 use App\Models\Submission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\AcademicYear;
 
 class AssignmentController extends Controller
 {
     public function index()
     {
+        $currentYear = AcademicYear::current();
         $student = Auth::user();
         $classroomId = $student->studentProfile?->classroom_id;
 
@@ -19,12 +21,12 @@ class AssignmentController extends Controller
             return back()->withErrors(['error' => 'Anda belum dimasukkan ke kelas mana pun. Hubungi Admin.']);
         }
 
-        // Ambil semua tugas dari jadwal di kelas siswa ini
         $assignments = Assignment::with(['schedule.subject', 'schedule.teacher', 'submissions' => function($q) use ($student) {
                 $q->where('student_id', $student->id);
             }])
-            ->whereHas('schedule', function ($q) use ($classroomId) {
-                $q->where('classroom_id', $classroomId);
+            ->whereHas('schedule.classroom', function ($q) use ($classroomId, $currentYear) {
+                $q->where('classroom_id', $classroomId)
+                  ->where('academic_year', $currentYear);
             })
             ->orderBy('due_date', 'desc')
             ->paginate(10);
@@ -38,7 +40,6 @@ class AssignmentController extends Controller
             'answer_text' => 'required|string',
         ]);
 
-        // Cek apakah masih dalam tenggat waktu
         if (now()->greaterThan($assignment->due_date)) {
             return back()->withErrors(['error' => 'Tenggat waktu sudah lewat.']);
         }

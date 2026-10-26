@@ -5,7 +5,7 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-@plugin "@duo-icons/tailwind"; /* Jika Anda masih pakai plugin ini */
+@plugin "@duo-icons/tailwind";
 
 @theme {
     --font-poppins: "Poppins", sans-serif;
@@ -13,14 +13,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* =========================================
-   KONFIGURASI WARNA GLOBAL (LIGHT MODE)
-   ========================================= */
 :root {
     --background: #ffffff;
     --foreground: #111827;
     
-    /* Warna Utama (Biru Sidebar) */
     --primary: #2F80ED; 
     --primary-foreground: #ffffff;
     
@@ -30,14 +26,10 @@
     --card: #ffffff; 
 }
 
-/* =========================================
-   KONFIGURASI WARNA GLOBAL (DARK MODE)
-   ========================================= */
 .dark {
     --background: #111827;
     --foreground: #f9fafb;
     
-    /* Warna Utama (Biru Sidebar versi terang) */
     --primary: #3b82f6;
     --primary-foreground: #ffffff;
     
@@ -58,9 +50,11 @@
     --color-card: var(--card);
 }
 
+/* === KUNCI PERBAIKAN FONT === */
 body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: "Poppins", sans-serif !important; /* Memaksa semua elemen memakai Poppins */
 }
 
 [x-cloak] {

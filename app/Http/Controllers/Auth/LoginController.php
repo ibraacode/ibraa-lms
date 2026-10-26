@@ -26,7 +26,7 @@ class LoginController extends Controller
         return view('auth.login', compact('academicYears'));
     }
 
-    public function login(Request $request)
+        public function login(Request $request)
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -49,11 +49,27 @@ class LoginController extends Controller
         }
 
         $request->session()->regenerate();
-        
-        // Simpan Tahun Ajaran ke Session
         session(['active_academic_year' => $request->academic_year]);
-
         $user->update(['last_login_at' => now()]);
+
+        // Cek status kelulusan
+        if ($user->hasRole('siswa')) {
+            $profile = $user->studentProfile;
+
+            if ($profile && in_array($profile->status, ['lulus', 'mutasi', 'dropout'])) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                throw ValidationException::withMessages([
+                    'email' => 'Akun Anda sudah tidak aktif (Status: ' . ucfirst($profile->status) . ').',
+                ]);
+            }
+
+            // Redirect ke Daftar Ulang jika belum selesai
+            if ($profile && $profile->registration_status === 'pending') {
+                return redirect()->route('student.registration');
+            }
+        }
 
         if ($user->must_change_password === '1') {
             return redirect()->route('password.change');

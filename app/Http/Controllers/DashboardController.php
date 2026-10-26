@@ -9,9 +9,11 @@ use App\Models\DailyAttendance;
 use App\Models\Invoice;
 use App\Models\Submission;
 use App\Models\AttendanceRecord;
+use App\Models\Schedule;
+use App\Models\Assignment;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Helpers\AcademicYear;
 
 class DashboardController extends Controller
 {
@@ -31,50 +33,63 @@ class DashboardController extends Controller
         return view('dashboard', $data);
     }
 
-    // ================= STATISTIK ADMIN =================
     private function adminStats()
     {
-
-      $currentYear = \App\Helpers\AcademicYear::current();
+        $currentYear = AcademicYear::current();
         $today = Carbon::today();
 
+        // ================= KARTU RINGKASAN =================
+
+        // Siswa aktif di T.A berjalan
         $totalStudents = User::role('siswa')
             ->whereHas('studentProfile.classroom', function($q) use ($currentYear) {
                 $q->where('academic_year', $currentYear);
             })->count();
-
-      
-        $today = Carbon::today();
-
-        // Kartu Ringkasan
-        $totalStudents = User::role('siswa')->count();
+            
         $totalTeachers = User::role('guru')->count();
         
-        // Kehadiran hari ini
         $attendanceToday = DailyAttendance::where('date', $today)->count();
         
-        // Pemasukan Bulan Ini (Siswa + Lainnya)
+        // Pemasukan Bulan Ini (Disaring per Tahun Ajaran)
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
         
-        $incomeFromStudents = Payment::whereBetween('paid_at', [$startOfMonth, $endOfMonth])->sum('amount_paid');
-        $incomeOther = OtherIncome::whereBetween('received_at', [$startOfMonth, $endOfMonth])->sum('amount');
+        $incomeFromStudents = Payment::whereHas('invoice', function($q) use ($currentYear) {
+            $q->where('academic_year', $currentYear);
+        })->whereBetween('paid_at', [$startOfMonth, $endOfMonth])->sum('amount_paid');
+        
+        $incomeOther = OtherIncome::where('academic_year', $currentYear)
+            ->whereBetween('received_at', [$startOfMonth, $endOfMonth])
+            ->sum('amount');
+            
         $incomeThisMonth = $incomeFromStudents + $incomeOther;
         
-        // Tunggakan
-        $totalInvoiced = Invoice::where('status', '!=', 'exempt')->sum('amount');
-        $totalPaid = Payment::sum('amount_paid');
+        // Tunggakan (Disaring per Tahun Ajaran)
+        $totalInvoiced = Invoice::where('academic_year', $currentYear)
+            ->where('status', '!=', 'exempt')
+            ->sum('amount');
+            
+        $totalPaid = Payment::whereHas('invoice', function($q) use ($currentYear) {
+            $q->where('academic_year', $currentYear);
+        })->sum('amount_paid');
+        
         $outstanding = $totalInvoiced - $totalPaid;
 
-        // Grafik Keuangan 6 Bulan Terakhir
+
+        // ================= GRAFIK KEUANGAN (6 BULAN) =================
         $financeChart = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
             $start = $month->copy()->startOfMonth();
             $end = $month->copy()->endOfMonth();
 
-            $paid = Payment::whereBetween('paid_at', [$start, $end])->sum('amount_paid');
-            $other = OtherIncome::whereBetween('received_at', [$start, $end])->sum('amount');
+            $paid = Payment::whereHas('invoice', function($q) use ($currentYear) {
+                $q->where('academic_year', $currentYear);
+            })->whereBetween('paid_at', [$start, $end])->sum('amount_paid');
+            
+            $other = OtherIncome::where('academic_year', $currentYear)
+                ->whereBetween('received_at', [$start, $end])
+                ->sum('amount');
             
             $financeChart[] = [
                 'label' => $month->isoFormat('MMM'),
@@ -82,7 +97,8 @@ class DashboardController extends Controller
             ];
         }
 
-        // Grafik Kehadiran 7 Hari Terakhir
+
+        // ================= GRAFIK KEHADIRAN (7 HARI) =================
         $attendanceChart = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
@@ -99,15 +115,18 @@ class DashboardController extends Controller
         );
     }
 
-    // ================= STATISTIK GURU =================
     private function teacherStats($teacherId)
     {
-        $schedules = \App\Models\Schedule::where('teacher_id', $teacherId)->pluck('id');
+        $currentYear = AcademicYear::current();
         
-        // Total tugas dan berapa yang sudah dinilai
-        $totalAssignments = \App\Models\Assignment::whereIn('schedule_id', $schedules)->count();
+        // Ambil ID jadwal mengajar guru di T.A aktif
+        $schedules = Schedule::where('teacher_id', $teacherId)
+            ->whereHas('classroom', function($q) use ($currentYear) {
+                $q->where('academic_year', $currentYear);
+            })->pluck('id');
         
-        // Tugas yang belum dinilai (ada submission tapi score null)
+        $totalAssignments = Assignment::whereIn('schedule_id', $schedules)->count();
+        
         $ungradedCount = Submission::whereHas('assignment', function($q) use ($schedules) {
             $q->whereIn('schedule_id', $schedules);
         })->whereNull('score')->count();
@@ -115,26 +134,27 @@ class DashboardController extends Controller
         return compact('totalAssignments', 'ungradedCount');
     }
 
-    // ================= STATISTIK SISWA =================
     private function studentStats($studentId)
     {
-        // Persentase Kehadiran (dari total sesi yang pernah ada)
+        $currentYear = AcademicYear::current();
+        
+        // Kehadiran Siswa (Presensi per Mapel)
         $totalSessions = AttendanceRecord::where('student_id', $studentId)->count();
         $presentCount = AttendanceRecord::where('student_id', $studentId)->where('status', 'hadir')->count();
-        
         $attendanceRate = $totalSessions > 0 ? round(($presentCount / $totalSessions) * 100, 1) : 0;
 
         // Rata-rata Nilai
         $averageScore = Submission::where('student_id', $studentId)->whereNotNull('score')->avg('score');
         $averageScore = $averageScore ? round($averageScore, 1) : 0;
 
-        // Tugas belum dikerjakan
-        $studentClassroomId = \App\Models\User::find($studentId)->studentProfile?->classroom_id;
+        // Tugas Belum Dikerjakan (Disaring T.A)
+        $studentClassroomId = User::find($studentId)->studentProfile?->classroom_id;
         $pendingTasks = 0;
         
         if ($studentClassroomId) {
-            $pendingTasks = \App\Models\Assignment::whereHas('schedule', function($q) use ($studentClassroomId) {
-                $q->where('classroom_id', $studentClassroomId);
+            $pendingTasks = Assignment::whereHas('schedule.classroom', function($q) use ($studentClassroomId, $currentYear) {
+                $q->where('classroom_id', $studentClassroomId)
+                  ->where('academic_year', $currentYear);
             })->whereDoesntHave('submissions', function($q) use ($studentId) {
                 $q->where('student_id', $studentId);
             })->where('due_date', '>', now())->count();

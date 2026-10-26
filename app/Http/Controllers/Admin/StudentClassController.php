@@ -8,6 +8,7 @@ use App\Models\Classroom;
 use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use App\Models\AuditLog;
+use App\Helpers\AcademicYear;
 
 class StudentClassController extends Controller
 {
@@ -15,15 +16,25 @@ class StudentClassController extends Controller
     {
         $currentYear = \App\Helpers\AcademicYear::current();
 
-        // Ambil HANYA siswa yang terdaftar di kelas tahun ajaran aktif
+        // Tampilkan siswa yang:
+        // 1. Statusnya 'aktif' (belum lulus)
+        // 2. Punya kelas di tahun ini, ATAU belum punya kelas sama sekali (null)
         $students = User::role('siswa')
-            ->whereHas('studentProfile.classroom', function($q) use ($currentYear) {
-                $q->where('academic_year', $currentYear);
+            ->whereHas('studentProfile', function($q) use ($currentYear) {
+                $q->where(function($subQ) use ($currentYear) {
+                    // Belum punya kelas
+                    $subQ->whereNull('classroom_id')
+                         // ATAU punya kelas di tahun ajaran ini
+                         ->orWhereHas('classroom', function($q2) use ($currentYear) {
+                             $q2->where('academic_year', $currentYear);
+                         });
+                })
+                ->where('status', 'aktif'); // Hanya yang aktif
             })
             ->latest()
             ->paginate(20);
 
-        // Ambil HANYA kelas di tahun ajaran aktif
+        // Ambil kelas hanya di tahun ajaran aktif
         $classrooms = Classroom::where('academic_year', $currentYear)->orderBy('name')->get();
 
         $profiles = StudentProfile::whereIn('user_id', $students->pluck('id'))
@@ -39,7 +50,6 @@ class StudentClassController extends Controller
             'classroom_id' => 'nullable|exists:classrooms,id'
         ]);
 
-        // Update atau buat profil baru langsung ke tabel
         $profile = StudentProfile::firstOrNew(['user_id' => $student->id]);
         
         if (!$profile->exists) {
