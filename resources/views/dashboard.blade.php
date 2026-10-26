@@ -20,9 +20,10 @@
             $userRole = auth()->user()->roles->pluck('name')->first();
             $roleFilter = in_array($userRole, ['super-admin', 'tu']) ? ['semua', 'siswa', 'guru'] : [$userRole, 'semua'];
             $latestAnnouncements = \App\Models\Announcement::whereIn('target_role', $roleFilter)->latest()->take(2)->get();
+        
         @endphp
 
-        @if($latestAnnouncements->count() > 0)
+                @if($latestAnnouncements->count() > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @foreach($latestAnnouncements as $ann)
                     <div class="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex gap-4">
@@ -31,7 +32,9 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-primary text-sm mb-1">{{ $ann->title }}</h3>
-                            <p class="text-xs text-foreground/70 line-clamp-2">{{ Str::limit($ann->content, 100) }}</p>
+                            <p class="text-xs text-foreground/70 line-clamp-2">
+                                {{ Str::limit(strip_tags($ann->content), 100) }}
+                            </p>
                         </div>
                     </div>
                 @endforeach

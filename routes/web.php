@@ -150,7 +150,11 @@ Route::middleware(['auth', 'readonly.year'])->group(function () {
     // --- Pengumuman ---
     Route::middleware('permission:announcements.create')->prefix('admin/announcements')->name('admin.announcements.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\AnnouncementController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\AnnouncementController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\AnnouncementController::class, 'store'])->name('store');
+        Route::get('/{announcement}/edit', [\App\Http\Controllers\Admin\AnnouncementController::class, 'edit'])->name('edit');
+        Route::put('/{announcement}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'update'])->name('update');
+        Route::delete('/{announcement}', [\App\Http\Controllers\Admin\AnnouncementController::class, 'destroy'])->name('destroy');
     });
 
     // --- Rapor Guru ---
@@ -342,6 +346,8 @@ Route::middleware(['auth', 'readonly.year'])->group(function () {
         Route::post('/occupations', [\App\Http\Controllers\Admin\MasterDataController::class, 'storeOccupation'])->name('occupations.store');
         Route::delete('/occupations/{occupation}', [\App\Http\Controllers\Admin\MasterDataController::class, 'destroyOccupation'])->name('occupations.destroy');
     });
+
+    Route::post('/admin/editor/upload', [\App\Http\Controllers\Admin\EditorUploadController::class, 'upload'])->name('admin.editor.upload');
 
 });
 
